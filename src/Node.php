@@ -14,7 +14,6 @@ use think\Db;
 use think\facade\Config;
 use think\facade\Env;
 use think\Loader;
-use vitphp\admin\model\SystemAuthNode;
 
 class Node
 {
@@ -70,24 +69,7 @@ class Node
      * @throws \think\exception\PDOException
      */
     public static function reload() {
-        $node = self::getFileNodes();
-        foreach ($node as $key => $value){
-            $id = SystemAuthNode::where('path',$value['path'])->value('id');
-            if ($id){
-                SystemAuthNode::where('path',$value['path'])->update($value);
-            }else{
-                SystemAuthNode::insert($value);
-            }
-        }
-
-        $list = SystemAuthNode::column('id', 'path');
-        $ids = [];
-        foreach ($node as $item) {
-            if (isset($list[$item['path']])) {
-                $ids[] = $list[$item['path']];
-            }
-        }
-        SystemAuthNode::whereNotIn('id', $ids)->delete();
+        return;
     }
 
     /**
@@ -150,7 +132,7 @@ class Node
     public static function getNodesData()
     {
 
-        $list = SystemAuthNode::select()->toArray();
+        $list = [];
         usort($list, function($x, $y) {
             return strcasecmp($x['path'],$y['path']);
         });

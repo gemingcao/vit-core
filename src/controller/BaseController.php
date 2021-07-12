@@ -17,8 +17,8 @@ use think\db\Query;
 use think\db\Where;
 use think\facade\Cache;
 use think\facade\View;
+use vitphp\admin\auth\AnnotationAuth;
 use vitphp\admin\middleware\CheckAccess;
-use vitphp\admin\model\SystemAuthNode;
 use vitphp\admin\traits\Jump;
 
 class BaseController extends ThinkController
@@ -46,48 +46,89 @@ class BaseController extends ThinkController
     public function __construct(App $app = null)
     {
         parent::__construct($app);
+        # 获取登录用户的id
+        $login_id = session('admin.id');
+//        dump($login_id);
         // 面包屑数据
+        # 模块
         $module = $this->app->http->getName();
+        # 控制器
         $controller = parse_name($this->request->controller(),0);
+        # 方法
         $action = $this->request->action();
 
-        $ctitie = Cache::remember("{$module}/{$controller}",function ()use($module,$controller){
-            return SystemAuthNode::where('path',"{$module}/{$controller}")->value('title');
-        },600);
-        $atitie = Cache::remember("{$module}/{$controller}/{$action}",function () use ($module,$controller,$action){
-            return SystemAuthNode::where('path',"{$module}/{$controller}/{$action}")->value('title');
-        },600);
-
-       View::assign(['ctitle'=>$ctitie,'atitle'=>$atitie]);
+        $ctitie = '';
+        $atitie = '';
+        View::assign(['ctitle'=>$ctitie,'atitle'=>$atitie]);
 
         // 当前控制器
         $classuri = $this->app->http->getName().'/'.$this->request->controller();
         $name = $this->app->http->getName();
+
         if($name != 'index'){
+            # 如果模块不是index模块，判断是否传有pid参数
             $pid = input('pid');
             if(empty($pid)){
                 $this->error("项目不存在");
             }
-            $login_id = session('admin.id');
-            $project = Db::name("app")->where(['id'=>$pid,'uid'=>$login_id])->find();
-
-            if($project){
+//            # 根据项目pid和用户id查询是否有改项目权限
+//            $project = Db::name("app")->where(['id'=>$pid,'uid'=>$login_id])->find();
+            # 查询项目信息
+            $app = Db::name('app')->where(['id'=>$pid])->find();
+            if($app){
+                $ok = false;
+                if($login_id == 1){
+                    $ok = true;
+                }else if($app['uid'] == $login_id){
+                    $ok = true;
+                }else{
+                   if($pid == Db::name('users')->where('id', $login_id)->value('pid')){
+                       $ok = true;
+                   }
+                }
+                if($ok === false){
+                    $this->error("项目不存在!");
+                    return false;
+                }
+                # 如果不是超级管理员
                 if($login_id != 1){
-                    $dq_time = $project['dq_time'];
+                    # 判断项目是否过期
+                    $dq_time = $app['dq_time'];
                     if(time() < $dq_time){
                         $this->error("项目时间已到期");
                     }
                 }
-                $addons = $project['addons'];
-
+                # 获取记录模块名
+                $addons = $app['addons'];
+                # 如果记录模块名称和当前模块名称不一致
                 if($addons != $name){
                     $this->error("项目不匹配");
                 }
-                $menu = Db::name("menu")->where(['type'=>$name])->select()->toArray();
-                $app = Db::name('app')->where(['uid'=>$login_id,'id'=>$pid])->find();
+
+                if($app){
+                    # 如果当前用户是项目的超级管理员
+                    if($app['uid'] === $login_id){
+                        # 是管理员，查询全部菜单权限
+                        $menu = Db::name("menu")->where(['type'=>$name])->select()->toArray();
+                        foreach ($menu as $i=>$v){
+                            $v['url'] = url(strtolower($v['url']))->build();
+                            $menu[$i] = $v;
+                        }
+                    }else{
+                        # 不是该项目的管理员,进行权限匹配查询 (如果是项目成员(并非管理员)则验证权限)
+                        $menu = AnnotationAuth::getMenu($login_id,$addons);
+//                        var_dump($menu);
+                    }
+                }else{
+                    # 项目信息不存在，返回一个空菜单
+                    $menu = [];
+//                    $this->error("项目不存在!");
+                }
+                # 菜单数据处理
                 if($menu){
                     foreach ($menu as $k=>$v){
-                        $menu[$k]['pathUrl'] = url($v['type'].'/'.$v['url'].'?pid='.$pid);
+                        $menu[$k]['pathUrl'] = $v['url'].'?pid='.$pid;
+                        $menu[$k]['title'] = empty($menu[$k]['title']) ? $v['name'] : $v['title'];
                     }
                 }
                 View::assign(['menu'=>$menu,'app'=>$app]);
@@ -96,7 +137,6 @@ class BaseController extends ThinkController
                     $this->error("项目不存在!");
                 }else{
                     $this->error('当前请求没有登录','index/login/index');
-
                 }
             }
 

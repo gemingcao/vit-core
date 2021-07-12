@@ -20,7 +20,7 @@
             ],
             "config": {
                 "admin": "config/admin.php",
-				"jump": "config/jump.php"
+                "jump" : "config/jump.php"
             }
         }
     }

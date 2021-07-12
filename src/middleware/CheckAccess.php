@@ -43,11 +43,13 @@ class CheckAccess
 
         $path = "{$module}/{$controller}/{$action}";
 
-        if (!Auth::auth($path)){
-            if (Session::has('admin')){
-                $this->show("当前请求没有权限");
+        if($admin_id != 1){
+            if (!Auth::auth([$module,$controller,$action])){
+                if (Session::has('admin')){
+                    $this->show("当前请求没有权限");
+                }
+                $this->error('当前请求没有登录','index/login/index');
             }
-            $this->error('当前请求没有登录','index/login/index');
         }
 
         $response = $next($request);
