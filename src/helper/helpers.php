@@ -27,39 +27,7 @@ function jsonSucCode($msg,$data=""){
     ];
     echo json_encode($result);exit;
 }
-/**
- * 获取默认公众号配置
- */
-function getDefConfig(){
-    $pid = input('pid',1);
-    if(!empty($pid)){
-        $get = Db::name('app')->alias('p')
-            ->field('p.*,a.appid,a.appsecret,mchid,apikey')
-            ->join('vote_weixin a ','a.pid=p.id')
-            ->where(" p.id={$pid}")->find();
-        return $get;
-    }else{
-        return false;
-    }
 
-}
-
-/**
- * 获取公众号配置
- */
-function getConfig(){
-    $pid = input('pid');
-    if(!empty($pid)){
-        $get = Db::name('project')->alias('p')
-            ->field('p.*,a.appid,a.appsecret,mchid,apikey')
-            ->join('vote_weixin a ','a.pid=p.id')
-            ->where(" p.id={$pid}")->find();
-        return $get;
-    }else{
-        return false;
-    }
-
-}
 /**
  * 原生sql
  */
@@ -97,12 +65,6 @@ function manifest_check($module_name, $manifest) {
     if(!isset($manifest['addons']['name']) || empty($manifest['addons']['name'])) {
         return error(1, '模块名称未定义,请检查xml文件. ');
     }
-//    if(!isset($manifest['addons']['identifie']) || empty($manifest['addons']['identifie']) || !preg_match('/^[a-z][a-z\d_]+$/i', $manifest['addons']['identifie'])) {
-//        return error(1, '模块标识符未定义或格式错误(仅支持字母和数字, 且只能以字母开头),请检查xml文件.');
-//    }
-//    if(strtolower($module_name) != strtolower($manifest['addons']['identifie'])) {
-//        return error(1, '模块名称定义与模块路径名称定义不匹配,请检查xml文件. ');
-//    }
     if(!isset($manifest['addons']['version']) || empty($manifest['addons']['version']) || !preg_match('/^[\d\.]+$/i', $manifest['addons']['version'])) {
         return error(1, '模块版本号未定义(仅支持数字和句点),请检查xml文件. ');
     }
@@ -207,30 +169,7 @@ function _ext_module_vitphp_entries($elm) {
     }
     return $ret;
 }
-//获取用户信息
-function getVoteUserInfo(){
-    $common = new Common();
-    $param = $common->getUserInfo();
-    return $param;
-}
-function createVoteUrl($path,$params = array()){
 
-    $url = "http://tp.05v.cn/".$path;
-    $pid = input('pid');
-
-    if(!empty($pid)){
-        $url .= "?pid={$pid}&";
-    }else{
-        $url .= "?pid=";
-    }
-    if (!empty($params)) {
-        $queryString = createParameters($params, '', '&');
-
-        $url .= $queryString;
-    }
-    return $url;
-
-}
 /**
  * @param $path
  * @param array $params
@@ -424,16 +363,7 @@ function createQrcode($url){
     }
 
 }
-/**
- * 设置路由规则
- * @param $data
- */
-function setVoteRoutIng($data){
-    if($data){
-        Db::name('routing')->insertGetId($data);
-    }
 
-}
 /**
  * 保存设置
  * @param $name
@@ -463,19 +393,24 @@ function setVoteRoutIng($data){
  * @throws \think\db\exception\DbException
  * @throws \think\db\exception\ModelNotFoundException
  */
-  function getSetting($name){
-      
-    $sett =  DB::name('settings')->where('1=1')->order('id desc ')->select();
-    $data = [];
-    if($sett->toArray()){
-        $setting = $sett->toArray();
-        foreach ($setting as $k=>$v){
-            $data[$v['addons']][$v['name']] = $v['value'];
-        }
-        return isset($data['setup'][$name]) ?  $data['setup'][$name] : "";
-    }else{
-        return '';
-    }
+  function getSetting($name,$addons=""){
+
+      $sett =  DB::name('settings')->where('1=1')->order('id desc ')->select();
+      $data = [];
+      if($sett->toArray()){
+          $setting = $sett->toArray();
+          foreach ($setting as $k=>$v){
+              $data[$v['addons']][$v['name']] = $v['value'];
+          }
+          if($addons){
+              return isset($data[$addons][$name]) ?  $data[$addons][$name] : "";
+          }else{
+              return isset($data["setup"][$name]) ?  $data["setup"][$name] : "";
+          }
+
+      }else{
+          return '';
+      }
 
 
 }
@@ -554,4 +489,15 @@ function getTDate()
  */
 function auth($path){
     return \vitphp\admin\Auth::auth($path);
+}
+//获取系统配置appid
+function getDefConfig(){
+    $config = [];
+
+    $wx_appid =  getSetting("wx_appid");
+    $wx_appsecret =  getSetting("wx_appsecret");
+    $config['appid']=$wx_appid;
+    $config['appsecret'] =$wx_appsecret;
+
+    return $config;
 }

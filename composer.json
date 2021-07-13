@@ -19,8 +19,7 @@
                 "vitphp\\admin\\AdminService"
             ],
             "config": {
-                "admin": "config/admin.php",
-                "jump" : "config/jump.php"
+                "admin": "config/admin.php"
             }
         }
     }

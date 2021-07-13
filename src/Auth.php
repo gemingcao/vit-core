@@ -47,14 +47,11 @@ class Auth
         }
         $admin_id = Session::get('admin.id');
         $node = AnnotationAuth::checkAuth("app\\" . $path[0] . "\\controller\\" . $path[1], $path);
-//dump($node);
         $appAuth = Db::table('vit_app')->where(['uid'=>$admin_id,'addons'=>$path[0]])->find();
-//        dump($appAuth);
         if($appAuth){
             return true;
         }
 
-//        dump($node);
         if (!$node) {
             return false;
 //            halt('当前PATH（'.$path.'）没有加入权限管理列表');

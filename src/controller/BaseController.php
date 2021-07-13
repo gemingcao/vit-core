@@ -106,6 +106,7 @@ class BaseController extends ThinkController
                 }
 
                 if($app){
+
                     # 如果当前用户是项目的超级管理员
                     if($app['uid'] === $login_id){
                         # 是管理员，查询全部菜单权限
@@ -117,7 +118,7 @@ class BaseController extends ThinkController
                     }else{
                         # 不是该项目的管理员,进行权限匹配查询 (如果是项目成员(并非管理员)则验证权限)
                         $menu = AnnotationAuth::getMenu($login_id,$addons);
-//                        var_dump($menu);
+//                        dump($menu);
                     }
                 }else{
                     # 项目信息不存在，返回一个空菜单

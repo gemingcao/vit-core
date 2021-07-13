@@ -242,9 +242,7 @@ class AnnotationAuth{
         foreach ($data as $i=>$v){
             $v['_id'] = "{$v['class']}@{$v['name']}";
             $v['_cs'] = array_merge(['title'=>'','description'=>''],$parase_result, [
-                # 强制使用Name
-                'name' => empty($parase_result['name']) ? '' : $parase_result['name'],
-                'title'=> empty($parase_result['name']) ? '' : $parase_result['name'],
+                'title'=> empty($parase_result['title']) ? '' : $parase_result['title'],
             ]);
             $data[$i] = $v;
         }
@@ -267,9 +265,9 @@ class AnnotationAuth{
             '_id'  =>$auth['_id'],
             '_api' =>[$auth['class'],$auth['name']],
             // 方法@name
-            'name' =>isset($auth['meta']['name']) ? $auth['meta']['name'] :  '',
+            // 'name' =>isset($auth['meta']['name']) ? $auth['meta']['name'] :  '',
             // 方法@title
-            'title' =>isset($auth['meta']['name']) ? $auth['meta']['name'] :  '',
+            'title' =>isset($auth['meta']['title']) ? $auth['meta']['title'] :  '',
             'auth' =>isset($auth['meta']['auth']) ? $auth['meta']['auth'] :  '1',
             'login' =>isset($auth['meta']['login']) ? $auth['meta']['login'] : '1',
             'node'  =>"$app/".implode('.', explode('\\',$_dir))."/".$auth['name'],
@@ -395,6 +393,16 @@ class AnnotationAuth{
         return $newArr;
      }
     public static function checkAuth($class, $path){
+        $class = explode('\\',$class);
+        foreach ($class as $i=>$v){
+            $v = explode('.',$v);
+            if(count($v) == 2){
+                $v[1] = substr($v[1],0,1) == '_' ? substr($v[1],1) : $v[1];
+            }
+            $class[$i] = implode('\\',$v);
+        }
+        $class = implode("\\", $class);
+
         if(!class_exists($class)){
             return false;
         }
@@ -409,6 +417,7 @@ class AnnotationAuth{
                 break;
             }
         }
+
         return $activeAuth;
     }
 
@@ -448,7 +457,7 @@ class AnnotationAuth{
                     if(!isset($n['auth'])){
                         $n['auth'] = 0;
                     }
-                    if($n['auth'] === 1){
+                    if($n['auth'] == 1){
                         if(in_array(strtolower($v['url']), $nodes)){
                             $data[] = $v;
                             continue;

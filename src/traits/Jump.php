@@ -61,7 +61,7 @@ trait Jump
         // 把跳转模板的渲染下沉，这样在 response_send 行为里通过getData()获得的数据是一致性的格式
         if ('html' == strtolower($type)) {
             $type = 'view';
-            $response = Response::create($this->app->config->get('jump.dispatch_success_tmpl'), $type)->assign($result)->header($header);
+            $response = Response::create($this->app->config->get('admin.dispatch_success_tmpl'), $type)->assign($result)->header($header);
         } else {
             $response = Response::create($result, $type)->header($header);
         }
@@ -99,7 +99,7 @@ trait Jump
 
         if ('html' == strtolower($type)) {
             $type = 'view';
-            $response = Response::create($this->app->config->get('jump.dispatch_error_tmpl'), $type)->assign($result)->header($header);
+            $response = Response::create($this->app->config->get('admin.dispatch_error_tmpl'), $type)->assign($result)->header($header);
         } else {
             $response = Response::create($result, $type)->header($header);
         }
