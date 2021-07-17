@@ -8,6 +8,9 @@
     "autoload": {
         "psr-4": {
             "vitphp\\admin\\":"src/"
+        }, 
+        "psr-0": {
+            "": "extend/"
         },
         "files": [
             "src/helper/helpers.php"
