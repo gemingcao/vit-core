@@ -424,13 +424,78 @@ function redom($leng){
     $rand = substr($randStr,0,$leng);
     return $rand;
 }
-function media($fileUrl){
+function media($fileUrl,$storage =null, $domain = false){
+    if(substr($fileUrl,0,2) == './'){
+        // 如果是./斜杠开头的都是本地
+        return substr($fileUrl,1,strlen($fileUrl));
+    }
+    if(substr($fileUrl,0,8) == '/upload/'){
+        return '/public'.$fileUrl;
+    }
+    if(substr($fileUrl,0,1) == '/' && !is_numeric(substr($fileUrl,1,1))){
+        // 如果是/开头，并且第二位不是数字，直接返回
+       return  '/public'.$fileUrl;
+    }else if(substr($fileUrl,0,1) !== '/'){
+        return $fileUrl;
+        // 只要不是/开头都拼接上当前地址
+        $storage = getSetting("atta_type");
+        $storageMap = [
+            '2'=>'domain',
+            '3'=>'tx_domain',
+            '4'=>'al_domain',
+            '5'=>'ftp_domain'
+        ];
+        $domainStr = getSetting($storageMap[$storage] ?? '','setup');
+        return $domainStr.str_replace("//","/",'/'.$fileUrl);
+    }
+    // 如果是https://,http://,//开头直接返回
+    if(strpos($fileUrl, "http://") !== false
+        || strpos($fileUrl, "https://") !== false
+        || strpos($fileUrl, "//") !== false
+    ){
+        return $fileUrl;
+    }
+    // 如果$storage 不为空
+    if(!is_null($storage)){
+        // 如果 $storage == 'act'则取当前默认$storage
+        if($storage == 'act'){
+            $storage = getSetting("atta_type");
+        }
+        $storageMap = [
+            '2'=>'domain',
+            '3'=>'tx_domain',
+            '4'=>'al_domain',
+            '5'=>'ftp_domain'
+        ];
+        $name = $storageMap[$storage] ?? '';
+        if($name){
+            $domainStr = getSetting($name,'setup');
+            // 如果有设置domain，则返回数组
+            if($domain){
+                return [$domainStr,$fileUrl];
+            }
+            // 如果域名是/结尾直接拼接
+            if(substr($domainStr,strlen($domainStr)-1,1) == '/'){
+                $fileSrc = $domainStr.$fileUrl;
+            }else{
+                // 否则加上斜杠再拼接
+                $fileSrc =  $domainStr.str_replace("//","/",'/'.$fileUrl);
+            }
+            return $fileSrc;
+        }
+    }
+    // 如果是https://,http://,//开头直接返回
     if(strpos($fileUrl, "http://") !== false
         || strpos($fileUrl, "https://") !== false
         || strpos($fileUrl, "//") !== false
     ){
         return $fileUrl;
     }else{
+        // 如果是/app/开头的直接返回
+        if(substr($fileUrl,0,5) === '/app/'){
+            return $fileUrl;
+        }
+        // 否则拼接绝对路径
         return ROOT_PATH.$fileUrl;
     }
 
